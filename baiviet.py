@@ -6,9 +6,9 @@ import pandas as pd
 import re
 import os
 
-st.set_page_config(page_title="tạo bài viết", layout="centered")
+st.set_page_config(page_title="ZIP to Excel ", layout="centered")
 
-st.title("📦tạo bài viết ")
+st.title("📦 ZIP to Excel ")
 
 uploaded_file = st.file_uploader("Tải file ZIP chứa .md", type=["zip"])
 
@@ -24,31 +24,28 @@ if uploaded_file:
                 content = zip_ref.read(md_file).decode("utf-8")
                 html_content = markdown.markdown(content)
 
-                # Lấy tên file gốc
+                # Lấy tên file sạch
                 clean_name = md_file
-
-                # Nếu là README.md thì lấy tên thư mục cha
                 if clean_name.endswith("README.md"):
                     clean_name = os.path.dirname(clean_name)
                     clean_name = os.path.basename(clean_name)
-
                 else:
                     clean_name = os.path.basename(clean_name)
 
-                # Bỏ số ở đầu tên
+                # Bỏ số ở đầu
                 clean_name = re.sub(r'^\d+[-_ ]*', '', clean_name)
 
-                records.append({
-                    "Tên file": clean_name,
-                    "Markdown gốc": content,
-                    "HTML đã convert": html_content
-                })
+                # Cột 1: tiêu đề
+                title = f"{clean_name} 【链接地址： 】"
+
+                # Thêm vào records
+                records.append([title, html_content])
 
             # Xuất Excel
-            df = pd.DataFrame(records)
+            df = pd.DataFrame(records, columns=["标题", "内容"])
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
-                df.to_excel(writer, index=False, sheet_name="Converted")
+                df.to_excel(writer, index=False, sheet_name="Sheet1")
 
             st.download_button(
                 label="📥 Tải về Excel",
