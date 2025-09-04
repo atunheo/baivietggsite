@@ -3,10 +3,12 @@ import zipfile
 import io
 import markdown
 import pandas as pd
+import re
+import os
 
-st.set_page_config(page_title="ZIP MD to Excel Converter", layout="centered")
+st.set_page_config(page_title="tạo bài viết", layout="centered")
 
-st.title("📦 ZIP MD to Excel Converter")
+st.title("📦tạo bài viết ")
 
 uploaded_file = st.file_uploader("Tải file ZIP chứa .md", type=["zip"])
 
@@ -21,8 +23,23 @@ if uploaded_file:
             for md_file in md_files:
                 content = zip_ref.read(md_file).decode("utf-8")
                 html_content = markdown.markdown(content)
+
+                # Lấy tên file gốc
+                clean_name = md_file
+
+                # Nếu là README.md thì lấy tên thư mục cha
+                if clean_name.endswith("README.md"):
+                    clean_name = os.path.dirname(clean_name)
+                    clean_name = os.path.basename(clean_name)
+
+                else:
+                    clean_name = os.path.basename(clean_name)
+
+                # Bỏ số ở đầu tên
+                clean_name = re.sub(r'^\d+[-_ ]*', '', clean_name)
+
                 records.append({
-                    "Tên file": md_file,
+                    "Tên file": clean_name,
                     "Markdown gốc": content,
                     "HTML đã convert": html_content
                 })
