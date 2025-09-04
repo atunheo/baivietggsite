@@ -3,10 +3,9 @@ import zipfile
 import io
 import markdown
 import pandas as pd
-import re
-import os
+from bs4 import BeautifulSoup
 
-st.set_page_config(page_title="ZIP to Excel ", layout="centered")
+st.set_page_config(page_title="ZIP to Excel", layout="centered")
 
 st.title("📦 ZIP to Excel ")
 
@@ -24,19 +23,13 @@ if uploaded_file:
                 content = zip_ref.read(md_file).decode("utf-8")
                 html_content = markdown.markdown(content)
 
-                # Lấy tên file sạch
-                clean_name = md_file
-                if clean_name.endswith("README.md"):
-                    clean_name = os.path.dirname(clean_name)
-                    clean_name = os.path.basename(clean_name)
+                # Dùng BeautifulSoup để lấy <h1>
+                soup = BeautifulSoup(html_content, "html.parser")
+                h1_tag = soup.find("h1")
+                if h1_tag:
+                    title = h1_tag.get_text(strip=True)
                 else:
-                    clean_name = os.path.basename(clean_name)
-
-                # Bỏ số ở đầu
-                clean_name = re.sub(r'^\d+[-_ ]*', '', clean_name)
-
-                # Cột 1: tiêu đề
-                title = f"{clean_name} 【链接地址： 】"
+                    title = "N/A"
 
                 # Thêm vào records
                 records.append([title, html_content])
