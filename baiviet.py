@@ -1,29 +1,36 @@
 import streamlit as st
 import re
+import zipfile
+import io
 
-st.set_page_config(page_title="TXT to Hyperlink Converter", layout="centered")
+st.set_page_config(page_title="ZIP TXT to Hyperlink Converter", layout="wide")
 
-st.title("📄 TXT to Hyperlink Converter")
+st.title("📦 ZIP TXT to Hyperlink Converter")
 
-uploaded_file = st.file_uploader("Tải file .txt", type=["txt"])
+uploaded_file = st.file_uploader("Tải file ZIP chứa .txt", type=["zip"])
 
 if uploaded_file:
-    # Đọc nội dung file
-    text = uploaded_file.read().decode("utf-8")
+    with zipfile.ZipFile(uploaded_file, "r") as zip_ref:
+        txt_files = [f for f in zip_ref.namelist() if f.endswith(".txt")]
 
-    st.subheader("📑 Nội dung gốc (.txt)")
-    st.text(text)
+        if not txt_files:
+            st.error("❌ Không tìm thấy file .txt nào trong ZIP.")
+        else:
+            for txt_file in txt_files:
+                st.subheader(f"📄 {txt_file}")
+                content = zip_ref.read(txt_file).decode("utf-8")
 
-    # Chuyển link thành HTML hyperlink
-    def convert_to_html(text):
-        pattern = r'(https?://[^\s]+)'
-        return re.sub(pattern, r'<a href="\1">\1</a>', text)
+                st.text_area("Nội dung gốc", content, height=150)
 
-    html_content = convert_to_html(text).replace("\n", "<br>")
+                # Hàm convert link -> hyperlink
+                def convert_to_html(text):
+                    pattern = r'(https?://[^\s]+)'
+                    return re.sub(pattern, r'<a href="\1">\1</a>', text)
 
-    st.subheader("🔗 Nội dung đã convert (có hyperlink)")
-    st.markdown(html_content, unsafe_allow_html=True)
+                html_content = convert_to_html(content).replace("\n", "<br>")
 
-    st.code(html_content, language="html")
+                st.markdown("🔗 **Nội dung sau khi convert (có hyperlink):**", unsafe_allow_html=True)
+                st.markdown(html_content, unsafe_allow_html=True)
 
-    st.success("✅ Bạn có thể copy đoạn HTML ở trên và dán vào Google Sites (chế độ Văn bản thường).")
+                st.code(html_content, language="html")
+ 
