@@ -32,7 +32,7 @@ if uploaded_file:
                 h1_tag = soup.find("h1")
                 if h1_tag:
                     title = h1_tag.get_text(strip=True)
-                    h1_tag.decompose()  # xóa luôn thẻ <h1> trong nội dung
+                    h1_tag.decompose()  # xóa h1 khỏi nội dung
                 else:
                     title = "N/A"
 
@@ -40,24 +40,21 @@ if uploaded_file:
                 links = soup.find_all("a")
                 if links:
                     first_link = links[0]
-                    # giữ lại href + text, xóa các thuộc tính khác
                     href = first_link.get("href", "")
                     text = first_link.get_text(strip=True)
                     first_link.clear()
                     first_link["href"] = href
                     first_link.string = text
 
-                    # các link còn lại chỉ giữ text
                     for extra_link in links[1:]:
                         extra_link.unwrap()
 
-                # Chỉ giữ các thẻ cơ bản
-                allowed_tags = {"p", "br", "ul", "ol", "li", "strong", "em", "a"}
+                # Chỉ giữ thẻ <br> và <a>, các thẻ khác bỏ đi
                 for tag in soup.find_all(True):
-                    if tag.name not in allowed_tags:
+                    if tag.name not in {"br", "a"}:
                         tag.unwrap()
 
-                # Nội dung HTML đơn giản
+                # HTML tối giản
                 clean_html = str(soup)
 
                 # Thêm vào records
