@@ -2,3 +2,4 @@ streamlit
 markdown
 pandas
 openpyxl
+beautifulsoup4
