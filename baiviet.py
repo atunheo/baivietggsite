@@ -5,9 +5,9 @@ import markdown
 import pandas as pd
 from bs4 import BeautifulSoup
 
-st.set_page_config(page_title="ZIP to Excel", layout="centered")
+st.set_page_config(page_title="ZIP MD to Excel Converter", layout="centered")
 
-st.title("📦 ZIP to Excel ")
+st.title("📦 ZIP MD to Excel Converter")
 
 uploaded_file = st.file_uploader("Tải file ZIP chứa .md", type=["zip"])
 
@@ -23,16 +23,26 @@ if uploaded_file:
                 content = zip_ref.read(md_file).decode("utf-8")
                 html_content = markdown.markdown(content)
 
-                # Dùng BeautifulSoup để lấy <h1>
+                # Chuẩn hóa link: chỉ giữ href + text
                 soup = BeautifulSoup(html_content, "html.parser")
+                for a in soup.find_all("a"):
+                    href = a.get("href", "")
+                    text = a.get_text(strip=True)
+                    a.clear()
+                    a["href"] = href
+                    a.string = text
+
+                # Lấy tiêu đề từ h1
                 h1_tag = soup.find("h1")
                 if h1_tag:
                     title = h1_tag.get_text(strip=True)
                 else:
                     title = "N/A"
 
+                clean_html = str(soup)
+
                 # Thêm vào records
-                records.append([title, html_content])
+                records.append([title, clean_html])
 
             # Xuất Excel
             df = pd.DataFrame(records, columns=["标题", "内容"])
