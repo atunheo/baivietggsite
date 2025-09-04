@@ -2,10 +2,11 @@ import streamlit as st
 import zipfile
 import io
 import markdown
+import pandas as pd
 
-st.set_page_config(page_title="tạo bài viết ", layout="wide")
+st.set_page_config(page_title="ZIP MD to Excel Converter", layout="centered")
 
-st.title("📦 tạo bài viết ")
+st.title("📦 ZIP MD to Excel Converter")
 
 uploaded_file = st.file_uploader("Tải file ZIP chứa .md", type=["zip"])
 
@@ -16,16 +17,25 @@ if uploaded_file:
         if not md_files:
             st.error("❌ Không tìm thấy file .md nào trong ZIP.")
         else:
+            records = []
             for md_file in md_files:
-                st.subheader(f"📄 {md_file}")
                 content = zip_ref.read(md_file).decode("utf-8")
-
-                st.text_area("📑 Nội dung gốc (Markdown)", content, height=150)
-
-                # Convert markdown -> HTML
                 html_content = markdown.markdown(content)
+                records.append({
+                    "Tên file": md_file,
+                    "Markdown gốc": content,
+                    "HTML đã convert": html_content
+                })
 
-                st.markdown("🔗 **Nội dung sau khi convert (HTML có hyperlink):**", unsafe_allow_html=True)
-                st.markdown(html_content, unsafe_allow_html=True)
+            # Xuất Excel
+            df = pd.DataFrame(records)
+            output = io.BytesIO()
+            with pd.ExcelWriter(output, engine="openpyxl") as writer:
+                df.to_excel(writer, index=False, sheet_name="Converted")
 
-                st.code(html_content, language="html")
+            st.download_button(
+                label="📥 Tải về Excel",
+                data=output.getvalue(),
+                file_name="converted_md.xlsx",
+                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
