@@ -19,7 +19,9 @@ if uploaded_file:
             st.error("❌ Không tìm thấy file .md nào trong ZIP.")
         else:
             records = []
+
             for md_file in md_files:
+                # Đọc file .md
                 content = zip_ref.read(md_file).decode("utf-8")
                 html_content = markdown.markdown(content)
 
@@ -30,6 +32,7 @@ if uploaded_file:
                 h1_tag = soup.find("h1")
                 if h1_tag:
                     title = h1_tag.get_text(strip=True)
+                    h1_tag.decompose()  # xóa luôn thẻ <h1> trong nội dung
                 else:
                     title = "N/A"
 
@@ -37,14 +40,27 @@ if uploaded_file:
                 links = soup.find_all("a")
                 if links:
                     first_link = links[0]
-                    # giữ nguyên link đầu tiên
+                    # giữ lại href + text, xóa các thuộc tính khác
+                    href = first_link.get("href", "")
+                    text = first_link.get_text(strip=True)
+                    first_link.clear()
+                    first_link["href"] = href
+                    first_link.string = text
+
+                    # các link còn lại chỉ giữ text
                     for extra_link in links[1:]:
-                        # bỏ link nhưng giữ lại text bên trong
                         extra_link.unwrap()
 
-                # Cột B = HTML đã xử lý
+                # Chỉ giữ các thẻ cơ bản
+                allowed_tags = {"p", "br", "ul", "ol", "li", "strong", "em", "a"}
+                for tag in soup.find_all(True):
+                    if tag.name not in allowed_tags:
+                        tag.unwrap()
+
+                # Nội dung HTML đơn giản
                 clean_html = str(soup)
 
+                # Thêm vào records
                 records.append([title, clean_html])
 
             # Xuất Excel
@@ -53,6 +69,7 @@ if uploaded_file:
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 df.to_excel(writer, index=False, sheet_name="Sheet1")
 
+            st.success("✅ Đã xử lý xong!")
             st.download_button(
                 label="📥 Tải về Excel",
                 data=output.getvalue(),
