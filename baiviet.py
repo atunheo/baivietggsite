@@ -5,7 +5,7 @@ import markdown
 
 st.set_page_config(page_title="tạo bài viết ", layout="wide")
 
-st.title("📦 ZIP MD to Hyperlink Converter")
+st.title("📦 tạo bài viết ")
 
 uploaded_file = st.file_uploader("Tải file ZIP chứa .md", type=["zip"])
 
