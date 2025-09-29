@@ -1,9 +1,8 @@
 import streamlit as st
 import zipfile
 import io
-import markdown
 import pandas as pd
-from bs4 import BeautifulSoup
+import re
 
 st.set_page_config(page_title="ZIP MD to Excel Converter", layout="centered")
 
@@ -21,55 +20,24 @@ if uploaded_file:
             records = []
 
             for md_file in md_files:
-                # Đọc file .md
+                # Đọc file .md (giữ nguyên Markdown)
                 content = zip_ref.read(md_file).decode("utf-8")
-                html_content = markdown.markdown(content)
 
-                # Parse HTML
-                soup = BeautifulSoup(html_content, "html.parser")
-
-                # Lấy tiêu đề từ <h1>
-                h1_tag = soup.find("h1")
-                if h1_tag:
-                    title = h1_tag.get_text(strip=True)
-                    h1_tag.decompose()  # xóa <h1> khỏi nội dung
+                # Lấy tiêu đề từ dòng H1 đầu tiên (ví dụ: "# Tiêu đề")
+                match = re.search(r"^\s*#\s+(.*)$", content, flags=re.MULTILINE)
+                if match:
+                    title = match.group(1).strip()
+                    # Loại bỏ dòng H1 khỏi nội dung Markdown
+                    content_without_title = re.sub(r"^\s*#\s+.*$(\r?\n)?", "", content, count=1, flags=re.MULTILINE)
                 else:
                     title = "N/A"
+                    content_without_title = content
 
-                # Xử lý link: chỉ giữ link đầu tiên
-                links = soup.find_all("a")
-                if links:
-                    first_link = links[0]
-                    href = first_link.get("href", "")
-                    text = first_link.get_text(strip=True)
-                    first_link.clear()
-                    first_link["href"] = href
-                    first_link.string = text
-
-                    # bỏ thẻ <a> của các link còn lại, giữ text
-                    for extra_link in links[1:]:
-                        extra_link.unwrap()
-
-                # Biến mỗi đoạn <p> thành text + <br>
-                lines = []
-                for elem in soup.find_all(["p", "br", "a", "li"]):
-                    if elem.name == "p" or elem.name == "li":
-                        text = elem.get_text(" ", strip=True)
-                        if text:
-                            lines.append(text + "<br>")
-                    elif elem.name == "br":
-                        lines.append("<br>")
-                    elif elem.name == "a":
-                        lines.append(str(elem) + "<br>")
-
-                # Nối lại nội dung đơn giản
-                clean_html = "".join(lines)
-
-                # Thêm vào records
-                records.append([title, clean_html])
+                # Thêm vào records: cột A tiêu đề (văn bản thuần), cột B nội dung Markdown
+                records.append([title, content_without_title.strip()])
 
             # Xuất Excel
-            df = pd.DataFrame(records, columns=["标题", "内容"])
+            df = pd.DataFrame(records, columns=["Tiêu đề", "Nội dung Markdown"])
             output = io.BytesIO()
             with pd.ExcelWriter(output, engine="openpyxl") as writer:
                 df.to_excel(writer, index=False, sheet_name="Sheet1")
