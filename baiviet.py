@@ -27,14 +27,11 @@ if uploaded_file:
                 match = re.search(r"^\s*#\s+(.*)$", content, flags=re.MULTILINE)
                 if match:
                     title = match.group(1).strip()
-                    # Loại bỏ dòng H1 khỏi nội dung Markdown
-                    content_without_title = re.sub(r"^\s*#\s+.*$(\r?\n)?", "", content, count=1, flags=re.MULTILINE)
                 else:
                     title = "N/A"
-                    content_without_title = content
 
-                # Thêm vào records: cột A tiêu đề (văn bản thuần), cột B nội dung Markdown
-                records.append([title, content_without_title.strip()])
+                # Thêm vào records: cột A tiêu đề (văn bản thuần), cột B là toàn bộ Markdown gốc
+                records.append([title, content])
 
             # Xuất Excel
             df = pd.DataFrame(records, columns=["Tiêu đề", "Nội dung Markdown"])
